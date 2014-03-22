@@ -16,6 +16,9 @@ from key import gl_USERID, gl_PASSWD, \
 __DEBUG = False
 
 
+#open database
+db = Database_Utility("sina_weibo.db")
+
 ########################
 #key and access_token
 ########################
@@ -81,14 +84,6 @@ def get_access_token(APP_KEY, APP_SECRET, CALLBACK_URL):
 ########################
 #Crawler fuctions
 ########################
-def begin_for_SEU():
-    print "Reading SEU POIID..."
-    seu_location = gl_client.place.pois.search.get(city="0025", keyword="东南大学")
-    for st in seu_location.pois:
-        if check_place(st.poiid):
-            decode_place(st)
-    return
-
 def get_user_from_place(pid):
     pn = pMAX = 1
     total = 0
@@ -97,9 +92,9 @@ def get_user_from_place(pid):
             user_checkin = gl_client.place.pois.users.get(poiid=pid, count=50, page=pn)
             # pdb.set_trace()
             for sc in user_checkin.users:
-                if check_user(sc.id):
-                    makecheckin(pid, sc.id, sc.checkin_at)
-                    decode_user(sc)
+                if db.check_user(sc.id):
+                    db.makecheckin(pid, sc.id, sc.checkin_at)
+                    db.decode_user(sc)
             if pn == 1:
                 total = user_checkin.total_number
                 pMAX = (total - 1) / 50 + 1 
@@ -110,14 +105,15 @@ def get_user_from_place(pid):
         time.sleep(2)
     remove_P_queue(pid)
 
+
 def get_place_from_user(uid):
     pn = pMAX = 1
     total = 0
     while pn <= pMAX:
         place_checkin = gl_client.place.users.checkins.get(uid=uid, count=50, page=pn)
         for sc in place_checkin.pois:
-            if check_place(sc.poiid):
-                decode_place(sc)
+            if db.check_place(sc.poiid):
+                db.decode_place(sc)
         if pn == 1:
             total = place_checkin.total_number
             total = int(total)
@@ -130,21 +126,31 @@ def get_place_from_user(uid):
     remove_U_queue(uid)
 
 
+def begin_for_SEU():
+    swit_app_key()
+    print "Reading SEU POIID..."
+    seu_location = gl_client.place.pois.search.get(city="0025", keyword="东南大学")
+    for st in seu_location.pois:
+        if db.check_place(st.poiid):
+            db.decode_place(st)
+    return
+
+
 def double_queue_crawler():
     place_list = []
     user_list = []
     swit_app_key()
     
-    users = fetch_from_U_queue(10)
+    users = db.fetch_from_U_queue(10)
     for sc in users:
-        get_place_from_user(sc[1])
+        db.get_place_from_user(sc[1])
 
-    places = fetch_from_P_queue(5)
+    places = db.fetch_from_P_queue(5)
     for sc in places:
-        get_user_from_place(sc[1])
+        db.get_user_from_place(sc[1])
 
 if __name__ == '__main__':
     print "Bein Weibo_Crawler!"
-    
-    double_queue_crawler()
-    gl_con.close()
+    begin_for_SEU()
+    # double_queue_crawler()
+    db.close()
