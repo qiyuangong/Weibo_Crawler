@@ -9,7 +9,7 @@ class Database_Utility(object):
         self.con = sqlite3.connect(dbname)
         self.cu = self.con.cursor()
 
-    def closedb(self):
+    def close(self):
         """close database connection"""
         if self.con:
             self.con.close()

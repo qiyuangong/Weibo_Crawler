@@ -103,7 +103,7 @@ def get_user_from_place(pid):
             print "There is an error for getting API attribute: page=%d, total=%d" %  (pn,total)
         pn = pn + 1
         time.sleep(2)
-    remove_P_queue(pid)
+    db.remove_P_queue(pid)
 
 
 def get_place_from_user(uid):
@@ -123,7 +123,7 @@ def get_place_from_user(uid):
         #   print "There is an error for getting API attribute: page=%d, total=%d" %  (pn,total)
         pn = pn + 1
         time.sleep(2)
-    remove_U_queue(uid)
+    db.remove_U_queue(uid)
 
 
 def begin_for_SEU():
@@ -143,14 +143,14 @@ def double_queue_crawler():
     
     users = db.fetch_from_U_queue(10)
     for sc in users:
-        db.get_place_from_user(sc[1])
+        get_place_from_user(sc[1])
 
     places = db.fetch_from_P_queue(5)
     for sc in places:
-        db.get_user_from_place(sc[1])
+        get_user_from_place(sc[1])
 
 if __name__ == '__main__':
     print "Bein Weibo_Crawler!"
-    begin_for_SEU()
-    # double_queue_crawler()
+    # begin_for_SEU()
+    double_queue_crawler()
     db.close()
