@@ -7,14 +7,15 @@ import pdb
 import urllib
 import urllib2
 from datetime import datetime
-from weibo import APIClient
+from weibo import APIClient, APIError
 from database_utility import *
 from key import gl_USERID, gl_PASSWD, \
-                gl_APP_KEY, gl_APP_SECRET, gl_ACCESS_TOKEN, gl_EXPIRE_IN, gl_CALLBACK_URL, \
-				gl_key_num, gl_client
+                gl_APP_KEY, gl_APP_SECRET, gl_ACCESS_TOKEN, gl_EXPIRE_IN, gl_CALLBACK_URL
 
 __DEBUG = False
-
+# for key and client_tooken
+gl_key_num = 0
+gl_client = ''
 
 #open database
 db = Database_Utility("sina_weibo.db")
@@ -22,20 +23,34 @@ db = Database_Utility("sina_weibo.db")
 ########################
 #key and access_token
 ########################
-def swit_app_key():
+def swit_app_key(num=-1):
     global gl_client, gl_key_num
-    gl_key_num += 1
-    if gl_key_num >= len(gl_APP_KEY):
-        gl_key_num = 0
-    
-    APP_KEY = gl_APP_KEY[gl_key_num]
-    APP_SECRET = gl_APP_SECRET[gl_key_num]
-    
-    gl_client = APIClient(app_key=APP_KEY, app_secret=APP_SECRET, redirect_uri=gl_CALLBACK_URL)
-    # get access_token and expires_in with APP_KEY, APP_SECRET, CALLBACK_URL
-    resp = get_access_token(APP_KEY, APP_SECRET, gl_CALLBACK_URL)
-    gl_client.set_access_token(resp.access_token, resp.expires_in)
+    init_index = gl_key_num
+    while True:
+        try: 
+            gl_key_num += 1
+            if gl_key_num >= len(gl_APP_KEY):
+                gl_key_num = 0
+            if gl_key_num == init_index:
+                print "Error: all app_key have been used!"
+                return False
+            APP_KEY = gl_APP_KEY[gl_key_num]
+            APP_SECRET = gl_APP_SECRET[gl_key_num]
+            
+            gl_client = APIClient(app_key=APP_KEY, app_secret=APP_SECRET, redirect_uri=gl_CALLBACK_URL)
+            # get access_token and expires_in with APP_KEY, APP_SECRET, CALLBACK_URL
+            resp = get_access_token(APP_KEY, APP_SECRET, gl_CALLBACK_URL)
+            gl_client.set_access_token(resp.access_token, resp.expires_in)
+        except APIError, e:
+            print e
+            print "Error: get_access_token error " + APP_KEY
+            continue
+        break
 
+    return True
+
+def update_access_token():
+    return 
 
 def get_access_token(APP_KEY, APP_SECRET, CALLBACK_URL):
     "get access_token and expires_in with APP_KEY, APP_SECRET, CALLBACK_URL "
@@ -73,7 +88,7 @@ def get_access_token(APP_KEY, APP_SECRET, CALLBACK_URL):
             print "callback url is : %s" % resp.geturl()
         code = "%s" % resp.geturl()[-32:]
     #code = "code=" + code
-    except Exception, e:
+    except APIError, e:
         print e
     if __DEBUG:
         print "code is : %s"  % code
@@ -90,17 +105,25 @@ def get_user_from_place(pid):
     while pn <= pMAX:
         try:
             user_checkin = gl_client.place.pois.users.get(poiid=pid, count=50, page=pn)
-            # pdb.set_trace()
-            for sc in user_checkin.users:
-                if db.check_user(sc.id):
-                    db.makecheckin(pid, sc.id, sc.checkin_at)
-                    db.decode_user(sc)
-            if pn == 1:
-                total = user_checkin.total_number
-                pMAX = (total - 1) / 50 + 1 
-                print '%d' % total + " person checkin on poiid= " + pid
-        except:
-            print "There is an error for getting API attribute: page=%d, total=%d" %  (pn,total)
+        except APIError:
+            # print e
+            print "Error: get API attribute: page=%d, total=%d" %  (pn,total)
+            if swit_app_key():
+                continue
+            else:
+                return 
+        except urllib2.HTTPError:
+            print "Error: Network Error"
+            time.sleep(100)
+        # pdb.set_trace()
+        for sc in user_checkin.users:
+            if db.check_user(sc.id):
+                db.makecheckin(pid, sc.id, sc.checkin_at)
+                db.decode_user(sc)
+        if pn == 1:
+            total = user_checkin.total_number
+            pMAX = (total - 1) / 50 + 1 
+            print '%d' % total + " person checkin on poiid= " + pid
         pn = pn + 1
         time.sleep(2)
     db.remove_P_queue(pid)
@@ -110,7 +133,18 @@ def get_place_from_user(uid):
     pn = pMAX = 1
     total = 0
     while pn <= pMAX:
-        place_checkin = gl_client.place.users.checkins.get(uid=uid, count=50, page=pn)
+        try:
+            place_checkin = gl_client.place.users.checkins.get(uid=uid, count=50, page=pn)
+        except APIError:
+            # print e
+            print "There is an error for getting API attribute: page=%d, total=%d" %  (pn,total)
+            if swit_app_key():
+                continue
+            else:
+                return 
+        except urllib2.HTTPError:
+            print "Error: Network Error"
+            time.sleep(100)
         for sc in place_checkin.pois:
             if db.check_place(sc.poiid):
                 db.decode_place(sc)
@@ -127,7 +161,6 @@ def get_place_from_user(uid):
 
 
 def begin_for_SEU():
-    swit_app_key()
     print "Reading SEU POIID..."
     seu_location = gl_client.place.pois.search.get(city="0025", keyword="东南大学")
     for st in seu_location.pois:
@@ -139,7 +172,6 @@ def begin_for_SEU():
 def double_queue_crawler():
     place_list = []
     user_list = []
-    swit_app_key()
     
     users = db.fetch_from_U_queue(10)
     for sc in users:
@@ -151,6 +183,7 @@ def double_queue_crawler():
 
 if __name__ == '__main__':
     print "Bein Weibo_Crawler!"
+    swit_app_key()
     # begin_for_SEU()
     double_queue_crawler()
     db.close()
