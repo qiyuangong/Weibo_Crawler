@@ -112,8 +112,9 @@ def get_user_from_place(pid):
                 continue
             else:
                 return 
-        except urllib2.HTTPError:
+        except urllib2.HTTPError, e:
             print "Error: Network Error"
+            print e
             time.sleep(100)
         # pdb.set_trace()
         for sc in user_checkin.users:
@@ -142,8 +143,9 @@ def get_place_from_user(uid):
                 continue
             else:
                 return 
-        except urllib2.HTTPError:
+        except urllib2.HTTPError, e:
             print "Error: Network Error"
+            print e
             time.sleep(100)
         for sc in place_checkin.pois:
             if db.check_place(sc.poiid):
@@ -168,8 +170,32 @@ def begin_for_SEU():
             db.decode_place(st)
     return
 
+def place_crawler(num):
+    """Crawler places accroding U_QUEUE
+    Ecah time get num users form U_QUEUE, add their checkin to PLACES and P_QUEUE
+    if not exist.
+    """
+    place_list = []
+    users = db.fetch_from_U_queue(num)
+    for sc in users:
+        get_place_from_user(sc[1])
+
+def user_crawler(num):
+    """Crawler user accroding P_QUEUE
+    Ecah time get num places form P_QUEUE, add users checkined to  USERS and U_QUEUE
+    if not exist.
+    """
+    user_list = []
+    places = db.fetch_from_P_queue(num)
+    for sc in places:
+        get_user_from_place(sc[1])
+
+
 
 def double_queue_crawler():
+    """Crawler both users and palces.
+    Each time get 10 users from U_QUEUE, 5 places from P_QUEUE
+    """
     place_list = []
     user_list = []
     
@@ -185,5 +211,7 @@ if __name__ == '__main__':
     print "Bein Weibo_Crawler!"
     swit_app_key()
     # begin_for_SEU()
-    double_queue_crawler()
+    # double_queue_crawler()
+    for i in range(10):
+        place_crawler(1000)
     db.close()
