@@ -117,12 +117,18 @@ def get_user_from_place(pid):
             print e
             time.sleep(100)
         # pdb.set_trace()
-        for sc in user_checkin.users:
-            if db.check_user(sc.id):
-                db.makecheckin(pid, sc.id, sc.checkin_at)
-                db.decode_user(sc)
+        if 'users' in user_checkin: 
+            for sc in user_checkin.users:
+                if db.check_user(sc.id):
+                    db.makecheckin(pid, sc.id, sc.checkin_at)
+                    db.decode_user(sc)
         if pn == 1:
-            total = user_checkin.total_number
+            if 'total_number' in user_checkin:
+                total = user_checkin.total_number
+            else:
+                total = '0'
+                # print user_checkin
+            total = int(total)
             pMAX = (total - 1) / 50 + 1 
             print '%d' % total + " person checkin on poiid= " + pid
         pn = pn + 1
@@ -147,11 +153,16 @@ def get_place_from_user(uid):
             print "Error: Network Error"
             print e
             time.sleep(100)
-        for sc in place_checkin.pois:
-            if db.check_place(sc.poiid):
-                db.decode_place(sc)
+        if 'pois' in place_checkin:
+            for sc in place_checkin.pois:
+                if db.check_place(sc.poiid):
+                    db.decode_place(sc)
         if pn == 1:
-            total = place_checkin.total_number
+            if 'total_number' in place_checkin:
+                total = place_checkin.total_number
+            else:
+                total = '0'
+                # print place_checkin
             total = int(total)
             pMAX = (total - 1) / 50 + 1 
             print " user " + str(uid) + "checkin on " + '%d' % total + " places"
