@@ -1,5 +1,76 @@
 import json
 import sqlite3
+# SQL for creat sina_weibo.db
+"""
+CREATE TABLE [USERS] (
+[id] TEXT  PRIMARY KEY NULL,
+[screen_name] TEXT  NULL,
+[name] TEXT  NULL,
+[domain] TEXT  NULL,
+[gender] TEXT  NULL,
+[city] INTEGER  NULL,
+[province] INTEGER  NULL,
+[location] TEXT  NULL,
+[description] TEXT  NULL,
+[url] TEXT  NULL,
+[statuses_count] INTEGER  NULL,
+[created_at] TEXT  NULL,
+[all] TEXT  NULL
+)
+
+CREATE TABLE [PLACES] (
+[pid] TEXT  PRIMARY KEY NULL,
+[title] TEXT  NULL,
+[address] TEXT  NULL,
+[city] TEXT  NULL,
+[province] TEXT  NULL,
+[telephone] TEXT  NULL,
+[checkin_num] INTEGER  NULL,
+[checkin_user_num] INTEGER  NULL,
+[all] TEXT  NULL
+)
+
+CREATE TABLE [U_QUEUE] (
+[id] INTEGER  PRIMARY KEY AUTOINCREMENT NOT NULL,
+[uid] INTEGER  NULL
+)
+
+CREATE TABLE [P_QUEUE] (
+[id] INTEGER  PRIMARY KEY AUTOINCREMENT NOT NULL,
+[pid] TEXT  NULL
+)
+
+CREATE TABLE [FOLLOWERS] (
+[id] INTEGER  NOT NULL PRIMARY KEY AUTOINCREMENT,
+[uid] INTEGER  NULL,
+[fid] INTEGER  NULL
+)
+
+CREATE TABLE [MESSAGES] (
+[id] INTEGER  NULL PRIMARY KEY,
+[uid] INTEGER  NULL,
+[created_at] TEXT  NULL,
+[text] TEXT  NULL,
+[source] TEXT  NULL,
+[favorited] TEXT  NULL,
+[truncated] TEXT  NULL,
+[in_reply_to_status_id] TEXT  NULL,
+[in_reply_to_user_id] TEXT  NULL,
+[in_reply_to_screen_name] TEXT  NULL,
+[geo] TEXT  NULL,
+[mid] TEXT  NULL,
+[reposts_count] INTEGER  NULL,
+[conmments_count] INTEGER  NULL,
+[annotations] INTEGER  NULL
+)
+
+CREATE TABLE [FRIENDS] (
+[id] INTEGER  PRIMARY KEY AUTOINCREMENT NOT NULL,
+[uid] INTEGER  NULL,
+[fid] INTEGER  NULL
+)
+
+"""
 
 class Database_Utility(object):
     #variables for ssqlite db 
