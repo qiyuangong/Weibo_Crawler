@@ -107,7 +107,7 @@ class Database_Utility(object):
 
     def remove_U_queue(self, uid):
         """remove uid from U_QUEUE list"""
-        self.cu.execute('delete from U_QUEUE where id=?', (uid,))
+        self.cu.execute('delete from U_QUEUE where uid=?', (uid,))
         self.con.commit()
 
     def decode_place(self, st):
