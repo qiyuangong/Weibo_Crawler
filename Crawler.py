@@ -219,10 +219,31 @@ def double_queue_crawler():
         get_user_from_place(sc[1])
 
 if __name__ == '__main__':
+    if len(sys.argv) <= 1:
+        print "No param is inputed. Please input params."
+        print "Usage python %s [user | place | both | help]" % sys.argv[0]
+        sys.exit(0)
     print "Bein Weibo_Crawler!"
-    swit_app_key()
+    if sys.argv[1] == 'user':
+        print "Crawler users according to P_QUEUE" 
+        swit_app_key()
+        for i in range(10):
+            user_crawler(100)
+    elif sys.argv[1] == 'place':
+        print "Crawler places according to U_QUEUE"
+        swit_app_key()
+        for i in range(10):
+            place_crawler(1000)
+    elif sys.argv[1] == 'both':
+        print "Crawler places and users according to U_QUEUE and P_QUEUE"
+        swit_app_key()
+        for i in range(10):
+            user_crawler(100)
+        for i in range(10):
+            place_crawler(1000)
+    else:
+        print "Input param is not supported!"
+        print "Usage python %s [login | logout | status | help]" % sys.argv[0]
     # begin_for_SEU()
     # double_queue_crawler()
-    for i in range(10):
-        place_crawler(1000)
     db.close()
