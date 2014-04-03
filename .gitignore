@@ -3,6 +3,8 @@
 #################
 key.py
 sina_weibo.db*
+!example/key.py
+!example/sina_weibo.db*
 
 #################
 ## Eclipse
