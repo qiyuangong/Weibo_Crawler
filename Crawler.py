@@ -203,18 +203,18 @@ def user_crawler(num):
 
 
 
-def double_queue_crawler():
+def double_queue_crawler(num):
     """Crawler both users and palces.
-    Each time get 10 users from U_QUEUE, 5 places from P_QUEUE
+    Each time get num*10 users from U_QUEUE,num places from P_QUEUE
     """
     place_list = []
     user_list = []
     
-    users = db.fetch_from_U_queue(10)
+    users = db.fetch_from_U_queue(num*10)
     for sc in users:
         get_place_from_user(sc[1])
 
-    places = db.fetch_from_P_queue(5)
+    places = db.fetch_from_P_queue(num)
     for sc in places:
         get_user_from_place(sc[1])
 
@@ -237,13 +237,10 @@ if __name__ == '__main__':
     elif sys.argv[1] == 'both':
         print "Crawler places and users according to U_QUEUE and P_QUEUE"
         swit_app_key()
-        for i in range(10):
-            user_crawler(100)
-        for i in range(10):
-            place_crawler(1000)
+        double_queue_crawler(10)
     else:
         print "Input param is not supported!"
-        print "Usage python %s [login | logout | status | help]" % sys.argv[0]
+        print "Usage python %s [user | place | both | help]" % sys.argv[0]
     # begin_for_SEU()
     # double_queue_crawler()
     db.close()
