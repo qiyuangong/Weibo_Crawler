@@ -16,6 +16,7 @@ __DEBUG = False
 # for key and client_tooken
 gl_key_num = 0
 gl_client = ''
+gl_begin_time = 0
 
 #open database
 db = Database_Utility("sina_weibo.db")
@@ -27,7 +28,7 @@ def swit_app_key(num=-1):
     global gl_client, gl_key_num
     init_index = gl_key_num
     while True:
-        try: 
+        try:
             gl_key_num += 1
             if gl_key_num >= len(gl_APP_KEY):
                 gl_key_num = 0
@@ -36,7 +37,7 @@ def swit_app_key(num=-1):
                 return False
             APP_KEY = gl_APP_KEY[gl_key_num]
             APP_SECRET = gl_APP_SECRET[gl_key_num]
-            
+
             gl_client = APIClient(app_key=APP_KEY, app_secret=APP_SECRET, redirect_uri=gl_CALLBACK_URL)
             # get access_token and expires_in with APP_KEY, APP_SECRET, CALLBACK_URL
             resp = get_access_token(APP_KEY, APP_SECRET, gl_CALLBACK_URL)
@@ -50,7 +51,7 @@ def swit_app_key(num=-1):
     return True
 
 def update_access_token():
-    return 
+    return
 
 def get_access_token(APP_KEY, APP_SECRET, CALLBACK_URL):
     "get access_token and expires_in with APP_KEY, APP_SECRET, CALLBACK_URL "
@@ -63,7 +64,7 @@ def get_access_token(APP_KEY, APP_SECRET, CALLBACK_URL):
     opener = urllib2.build_opener(cookies)
     urllib2.install_opener(opener)
 
-    postdata = {"client_id": APP_KEY, 
+    postdata = {"client_id": APP_KEY,
                 "redirect_uri": CALLBACK_URL,
                 "userId": gl_USERID,
                 "passwd": gl_PASSWD,
@@ -111,13 +112,13 @@ def get_user_from_place(pid):
             if swit_app_key():
                 continue
             else:
-                return 
+                return
         except urllib2.HTTPError, e:
             print "Error: Network Error"
             print e
             time.sleep(100)
         # pdb.set_trace()
-        if 'users' in user_checkin: 
+        if 'users' in user_checkin:
             for sc in user_checkin.users:
                 if db.check_user(sc.id):
                     db.makecheckin(pid, sc.id, sc.checkin_at)
@@ -129,7 +130,7 @@ def get_user_from_place(pid):
                 total = '0'
                 # print user_checkin
             total = int(total)
-            pMAX = (total - 1) / 50 + 1 
+            pMAX = (total - 1) / 50 + 1
             print '%d' % total + " person checkin on poiid= " + pid
         pn = pn + 1
         time.sleep(2)
@@ -148,7 +149,7 @@ def get_place_from_user(uid):
             if swit_app_key():
                 continue
             else:
-                return 
+                return
         except urllib2.HTTPError, e:
             print "Error: Network Error"
             print e
@@ -164,7 +165,7 @@ def get_place_from_user(uid):
                 total = '0'
                 # print place_checkin
             total = int(total)
-            pMAX = (total - 1) / 50 + 1 
+            pMAX = (total - 1) / 50 + 1
             print " user " + str(uid) + "checkin on " + '%d' % total + " places"
         # except:
         #   print "There is an error for getting API attribute: page=%d, total=%d" %  (pn,total)
@@ -183,23 +184,37 @@ def begin_for_SEU():
 
 def place_crawler(num):
     """Crawler places accroding U_QUEUE
+    Run about 15 minutes.
     Ecah time get num users form U_QUEUE, add their checkin to PLACES and P_QUEUE
     if not exist.
     """
+    global gl_begin_time
     place_list = []
+    gl_begin_time = time.time()
     users = db.fetch_from_U_queue(num)
     for sc in users:
         get_place_from_user(sc[1])
+        run_time = time.time()-gl_begin_time
+        if (run_time/60) >= 15:
+            break
+
 
 def user_crawler(num):
-    """Crawler user accroding P_QUEUE
+    """Crawler users accroding P_QUEUE
+    Run about 15 minutes.
     Ecah time get num places form P_QUEUE, add users checkined to  USERS and U_QUEUE
     if not exist.
     """
+    global gl_begin_time
     user_list = []
+    gl_begin_time = time.time()
     places = db.fetch_from_P_queue(num)
     for sc in places:
         get_user_from_place(sc[1])
+        run_time = time.time()-gl_begin_time
+        if (run_time/60) >= 15:
+            break
+
 
 
 
@@ -209,7 +224,7 @@ def double_queue_crawler(num):
     """
     place_list = []
     user_list = []
-    
+
     users = db.fetch_from_U_queue(num*10)
     for sc in users:
         get_place_from_user(sc[1])
@@ -225,15 +240,13 @@ if __name__ == '__main__':
         sys.exit(0)
     print "Bein Weibo_Crawler!"
     if sys.argv[1] == 'user':
-        print "Crawler users according to P_QUEUE" 
+        print "Crawler users according to P_QUEUE"
         swit_app_key()
-        for i in range(10):
-            user_crawler(100)
+        user_crawler(100)
     elif sys.argv[1] == 'place':
         print "Crawler places according to U_QUEUE"
         swit_app_key()
-        for i in range(10):
-            place_crawler(1000)
+        place_crawler(1000)
     elif sys.argv[1] == 'both':
         print "Crawler places and users according to U_QUEUE and P_QUEUE"
         swit_app_key()
